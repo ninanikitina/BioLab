@@ -24,16 +24,16 @@ We used Pytorch-UNet cloned from https://github.com/milesial/Pytorch-UNet by @mi
 	Augmentation based on 
 		- rotating an image to a random angle and then cutting out the central part
 		- translating image by a random shifting of a window that equals to final rotated image size
-czi_reader 
+- czi_reader 
 	Reads czi files and save jpg images form two different channels separately
 	NOTE: initial jpgs are 16 bits, and this script converts it to 8 bits by using hardcoded normalization.
 	The user should decide based on images preview how he would like to normalize an image
-cut_nuclei
+- cut_nuclei
 	Cuts a big image into a bunch of out 512"512 (hard codded size) images form with nuclei in the center and
 	creates a mask based on contours
-test_normalization
+- test_normalization
 
-data_aug
+- data_aug
 	Pytorch augmentation that shown unsatisfactory results for this project.
 	It will probably be used later.
 
