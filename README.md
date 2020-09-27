@@ -1,22 +1,22 @@
-##PROJECT NAME
+# PROJECT NAME
 **Recognition of BioImages based on Machine Learning algorithms**
 
 
-##DESCRIPTION
+# DESCRIPTION
 
 This project is solving the problem of detection nuclei and actin on a specific location within cells.
 UNet model was trained from scratch with 300 images of 30 nuclei on different slices with data augmentation.
 
 
-##CREDITS
+# CREDITS
 
 We used Pytorch-UNet cloned from https://github.com/milesial/Pytorch-UNet by @milesial
 *Note from @milesial: Use Python 3.6 or newer*
 *Unet usage section was copied from the README file from this repository*
 
-##USAGE
+# USAGE
 
-##Utils
+# Utils
 - alternative_augumentation
 	Augmentation based on the idea of catting nuclei from an image and then rotating the nuclei to a random angle
 	The process of code wring for this augmentation is in progress.
@@ -38,7 +38,7 @@ data_aug
 	It will probably be used later.
 
 
-#UNet
+## UNet
 
 ### Tensorboard
 You can visualize in real time the train and test losses, the weights and gradients, along with the model predictions with tensorboard:
