@@ -1,0 +1,15 @@
+*.pyc
+data/
+__pycache__/
+checkpoints/
+runs/
+.idea/
+*.pth
+**/*.pth
+**/*.jpg
+**/*.html
+**/*.log
+**/*.aux
+SUBMISSION*
+venv/
+
