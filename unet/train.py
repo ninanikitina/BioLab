@@ -3,24 +3,22 @@ import logging
 import os
 import sys
 
-import numpy as np
 import torch
 import torch.nn as nn
 from torch import optim
 from tqdm import tqdm
 
-from eval import eval_net
+from unet.eval import eval_net
 from unet import UNet
 
 from torch.utils.tensorboard import SummaryWriter
-from utils.dataset import BasicDataset
-from utils.data_aug import DataAugmentation
+from unet.dataset import BasicDataset
 from torch.utils.data import DataLoader, random_split
 
-dir_img = 'data/imgs/'
-dir_mask = 'data/masks/'
+dir_img = '../src/data/imgs/'
+dir_mask = '../src/data/masks/'
 
-dir_checkpoint = 'checkpoints/'
+dir_checkpoint = '../src/checkpoints/'
 
 
 def train_net(net,
@@ -31,7 +29,6 @@ def train_net(net,
               val_percent=0.1,
               save_cp=True,
               img_scale=1):
-
     # transform_train = DataAugmentation.get_data_augmentation_transforms()
     transform_train = None
 
@@ -122,10 +119,10 @@ def train_net(net,
             except OSError:
                 pass
 
-            if epoch % 10 == 9:
-                torch.save(net.state_dict(),
-                           dir_checkpoint + f'CP_epoch{epoch + 1}.pth')
-                logging.info(f'Checkpoint {epoch + 1} saved !')
+            # if epoch % 10 == 9:
+            torch.save(net.state_dict(),
+                       dir_checkpoint + f'CP_epoch{epoch + 1}.pth')
+            logging.info(f'Checkpoint {epoch + 1} saved !')
 
     writer.close()
 

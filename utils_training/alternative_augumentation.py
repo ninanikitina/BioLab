@@ -1,7 +1,7 @@
 from PIL import Image
 import cv2
 import numpy as np
-from utils.cut_nuclei import get_cnt_center
+from multiple_nuclei_utils.cut_nuclei import get_cnt_center
 
 
 def get_central_cnt_mask(mask):

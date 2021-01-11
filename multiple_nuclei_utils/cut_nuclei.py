@@ -1,18 +1,26 @@
 import os
 import glob
 import numpy as np
-import cv2
+import cv2.cv2 as cv2
+from tqdm import tqdm
 
 
 CNT_AREA_TH = 700
 
 
 def get_cnt_center(cnt):
-    M = cv2.moments(cnt)
-    center_x = int(M["m10"] / M["m00"])
-    center_y = int(M["m01"] / M["m00"])
+    if len(cnt) <= 2:
+        center = (cnt[0, 0, 0], cnt[0, 0, 1])
+    else:
+        M = cv2.moments(cnt)
+        if M["m00"] == 0:
+            center_x = int(np.mean([cnt[i, 0, 0] for i in range(len(cnt))]))
+            center_y = int(np.mean([cnt[i, 0, 1] for i in range(len(cnt))]))
+        else:
+            center_x = int(M["m10"] / M["m00"])
+            center_y = int(M["m01"] / M["m00"])
 
-    center = (center_x, center_y)
+        center = (center_x, center_y)
 
     return center
 
@@ -60,33 +68,38 @@ def cut_nucleus(img, cnt):
     return nucleus_img
 
 
-def process_img(img_path, output_img_path, output_mask_path):
+def process_img(img_path, output_img_path):
     file_name = os.path.basename(img_path)
     img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
 
     cnts = get_cnts(img)
-    mask = draw_cnts(img.shape, cnts)
 
     for cnt in cnts:
         center = get_cnt_center(cnt)
-        nucleus_img = cut_nucleus(img, cnt)
-        nucleus_mask = cut_nucleus(mask, cnt)
-
         name = file_name.rsplit('.', 1)[0] + "_" + str(center[0]) + "_" + str(center[1]) + ".png"
 
+        nucleus_img = cut_nucleus(img, cnt)
         nucleus_img_path = os.path.join(output_img_path, name)
-        nucleus_mask_path = os.path.join(output_mask_path, name)
-
         cv2.imwrite(nucleus_img_path, nucleus_img)
-        cv2.imwrite(nucleus_mask_path, nucleus_mask)
+
+
+def run_cut_nuclei(folder_path=None, output_folder_path=None):
+    if folder_path is None:
+        if not os.path.exists('temp/czi_layers'):
+            raise RuntimeError("There is no folder {}\nCan't process images".format("temp/czi_layers"))
+
+        if not os.path.exists('temp/nucleus_imgs'):
+            os.makedirs('temp/nucleus_imgs')
+
+        folder_path = 'temp/czi_layers'
+        output_folder_path = 'temp/nucleus_imgs'
+
+    for img_path in tqdm(glob.glob(os.path.join(folder_path, "*.png"))):
+        process_img(img_path, output_folder_path)
 
 
 if __name__ == '__main__':
-    folder_path = r"D:\BioLab\img\temp_image"
-    output_img_path = r"D:\BioLab\img\model_training_img\Big_img_5K_and_mask\control siRNA 20x 5x5 15um stack_Airyscan Processing_Stitch-003\imgs"
-    output_mask_path = "D:\BioLab\img\model_training_img\Big_img_5K_and_mask\control siRNA 20x 5x5 15um stack_Airyscan Processing_Stitch-003\masks"
+    folder_path = r"D:\BioLab\img\model_training_img\Big_img_5K_and_mask\control_siRNA_20x_5x5_15um_stack_Airyscan_Processing_Stitch-003\Big_image_auto_adjustment_SAME_norm_for_each_layer"
+    output_folder_path = r"D:\BioLab\img\model_training_img\Big_img_5K_and_mask\control_siRNA_20x_5x5_15um_stack_Airyscan_Processing_Stitch-003\imgs"
 
-    for img_path in glob.glob(os.path.join(folder_path, "*.png")):
-        print("Processing " + img_path)
-
-        process_img(img_path, output_img_path, output_mask_path)
+    run_cut_nuclei(folder_path, output_folder_path)
