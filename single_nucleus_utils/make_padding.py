@@ -4,8 +4,8 @@ from tqdm import tqdm
 import cv2.cv2 as cv2
 import numpy as np
 
-input_folder = r"D:\BioLab\Tests_for_hand_labling\Image_of_all_layers"
-output_folder = r"D:\BioLab\Tests_for_hand_labling\Image_of_all_layer_with_padding"
+input_folder = r"D:\BioLab\src\single_nucleus_utils\temp\nucleus_layers"
+output_folder = r"D:\BioLab\img\Big_nucleus_training_img_and_mask\510_layers_img_padding"
 
 if __name__ == "__main__":
     for img_path in glob.glob(input_folder + r"\*"):
