@@ -34,7 +34,8 @@ def get_cnts(img):
     cnts, _ = cv2.findContours(img_thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
     # cnts = sorted(cnts, key=lambda cnt: cv2.contourArea(cnt), reverse=True)
     cnts = [cnt for cnt in cnts if cv2.contourArea(cnt) > CNT_AREA_TH]
-
+    if len(cnts) == 0:
+        return None
     return cnts
 
 

@@ -14,8 +14,14 @@ from single_nucleus_utils.analyze_acting_masks_contour_xsection_multiple import 
 
 H = 150
 L = 400
+Lz = 500
+
 
 class Node:
+    scale_x = 0.04  # units - micrometer
+    scale_y = 0.04  # units - micrometer (image was resized to account for different scale along z axis)
+    scale_z = 0.04  # units - micrometer (image was resized to account for different scale along z axis)
+
     def __init__(self, x, y, z, cnt, actin_id):
         self.x = x
         self.y = y
@@ -23,6 +29,11 @@ class Node:
         self.n = 1
         self.cnt = cnt
         self.actin_ids = [actin_id]
+
+    def get_stat(self):
+        return [self.x, self.y, self.z,
+                ",".join(map(str, self.actin_ids) ),
+                cv2.contourArea(self.cnt) * self.scale_y * self.scale_z]
 
 
 def is_point_in_triangle(x, y, x_test, y_test):
@@ -32,8 +43,17 @@ def is_point_in_triangle(x, y, x_test, y_test):
     return is_x_in_triangle and is_y_in_triangle
 
 
+def is_point_in_pyramid(x, y, z, x_test, y_test, z_test):
+    is_x_in_pyramid = x_test < x + H
+    is_y_in_pyramid = -L*(x_test - x)/(2*H) + y < y_test < L*(x_test - x)/(2*H) + y
+    is_z_in_pyramid = -Lz * (x_test - x) / (2 * H) + z < z_test < Lz * (x_test - x) / (2 * H) + z
+
+    return is_x_in_pyramid and is_y_in_pyramid and is_z_in_pyramid
+
+
 def plot_nodes(actin_fibers, nodes, pairs):
     ax = plt.axes(projection='3d')
+    # ax = plt.axes()  #for 2D testing
     for fiber in actin_fibers:
         if len(np.unique(fiber.zs)) < 1:
             continue
@@ -47,6 +67,7 @@ def plot_nodes(actin_fibers, nodes, pairs):
         color_z = 1.0 * np.random.randint(255) / 255
         if xdata:
             ax.scatter3D(xdata, ydata, zdata, c=[[color_x, color_y, color_z]] * len(xdata), cmap='Greens')
+            # ax.scatter(xdata, ydata, c=[[color_x, color_y, color_z]] * len(xdata), cmap='Greens')  #for 2D testing
 
     xdata, ydata, zdata = [], [], []
     for node in nodes:
@@ -58,16 +79,50 @@ def plot_nodes(actin_fibers, nodes, pairs):
     color_z = 0
     if xdata:
         ax.scatter3D(xdata, ydata, zdata, c=[[color_x, color_y, color_z]] * len(xdata), s=50, cmap='Greens')
+        # ax.scatter(xdata, ydata, c=[[color_x, color_y, color_z]] * len(xdata), s=50, cmap='Greens')  # for 2D testing
 
     for right_id, left_id in pairs:
         right_node, left_node = nodes[right_id], nodes[left_id]
         plt.plot((right_node.x, left_node.x), (right_node.y, left_node.y), (right_node.z, left_node.z), color='black')
+        # plt.plot((right_node.x, left_node.x), (right_node.y, left_node.y), color='black')  #for 2D testing
 
     plt.show()
 
 
+def get_actin_stat(actin_fibers):
+    header_row = ["ID", "Actin Length", "Actin Xsection", "Actin Volume", "Number of fiber layers", "Max gap", "Left node ID", "Right node ID"]
+    with open('actin_stat.csv', mode='w') as stat_file:
+        csv_writer = csv.writer(stat_file, delimiter=',')
+
+        csv_writer.writerow(header_row)
+
+        for fiber_id, fiber in enumerate(actin_fibers):
+            csv_writer.writerow([str(fiber_id)] + fiber.get_stat() + [fiber.left_node_id, fiber.right_node_id])
+
+
+def get_node_stat(nodes, pairs):
+    header_row = ["ID", "x", "y", "z", "actin_ids", "node_xsection", "connected_node_id"]
+    with open('node_stat.csv', mode='w') as stat_file:
+        csv_writer = csv.writer(stat_file, delimiter=',')
+
+        csv_writer.writerow(header_row)
+
+        for node_id, node in enumerate(nodes):
+            for pair in pairs:
+                if node_id == pair[0]:
+                    connected_node_id = pair[1]
+                    break
+                elif node_id == pair[1]:
+                    connected_node_id = pair[0]
+                    break
+                else:
+                    connected_node_id = None
+
+            csv_writer.writerow([str(node_id)] + node.get_stat() + [connected_node_id])
+
+
 if __name__ == "__main__":
-    file_to_read = open(r"D:\BioLab\src\single_nucleus_utils\actin_data_long.obj", "rb")
+    file_to_read = open(r"D:\BioLab\src\single_nucleus_utils\actin_data_long2.obj", "rb")  # change back to "actin-data_long.obj"
     actin_fibers = pickle.load(file_to_read)
     actin_fibers = [actin for actin in actin_fibers if actin.n > 30]
 
@@ -191,9 +246,10 @@ if __name__ == "__main__":
     node_to_candidates = defaultdict(lambda: [])
     for righ_node_id, right_node in right_nodes:
         for left_node_id, left_node in left_nodes:
-            if is_point_in_triangle(right_node.x, right_node.y, left_node.x, left_node.y):
+            # if is_point_in_triangle(right_node.x, right_node.y, left_node.x, left_node.y):
+            if is_point_in_pyramid(right_node.x, right_node.y, right_node.z, left_node.x, left_node.y, left_node.z):
                 node_to_candidates[righ_node_id].append(
-                    [left_node_id, np.sqrt((left_node.x - right_node.x)**2 + (left_node.y - right_node.y)**2)])
+                    [left_node_id, np.sqrt((left_node.x - right_node.x)**2 + (left_node.y - right_node.y)**2 + (left_node.z - right_node.z)**2)])
 
     node_to_candidates_list = []
     for k, v in node_to_candidates.items():
@@ -230,4 +286,6 @@ if __name__ == "__main__":
 
     # actin_fibers = [actin for actin in actin_fibers if actin.n > 5]
     plot_nodes(actin_fibers, nodes, pairs)
-    # plot_actin_fibers(actin_fibers)
+    get_actin_stat(actin_fibers)
+    get_node_stat(nodes, pairs)
+    plot_actin_fibers(actin_fibers)

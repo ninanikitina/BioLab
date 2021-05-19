@@ -7,6 +7,7 @@ runs/
 *.pth
 **/*.pth
 **/*.jpg
+**/*.png
 **/*.html
 **/*.log
 **/*.aux

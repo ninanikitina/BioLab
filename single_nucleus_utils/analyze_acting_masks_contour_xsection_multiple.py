@@ -12,7 +12,7 @@ from multiple_nuclei_utils.cut_nuclei import get_cnt_center
 from single_nucleus_utils.find_actin_fiber import ActinFiber
 
 
-MIN_FIBER_LENGTH_FINAL = 40 #5, 20, 40
+MIN_FIBER_LENGTH_FINAL = 1 #5, 20, 40
 GAP = 15 #5, 15, 100 px
 
 input_folder = r"D:\BioLab\img\Actin__training_img_and_masks\Unet_results\Unet_prediction_V1-with_weight_correction_475"

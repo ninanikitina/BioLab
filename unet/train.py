@@ -58,7 +58,8 @@ def train_net(net,
     if net.n_classes > 1:
         criterion = nn.CrossEntropyLoss()
     else:
-        criterion = nn.BCEWithLogitsLoss()
+        pos_weight = torch.tensor(2).to(device=device)
+        criterion = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
 
     for epoch in range(epochs):
         net.train()
@@ -96,8 +97,11 @@ def train_net(net,
                         tag = tag.replace('.', '/')
                         writer.add_histogram('weights/' + tag, value.data.cpu().numpy(), global_step)
                         writer.add_histogram('grads/' + tag, value.grad.data.cpu().numpy(), global_step)
-                    val_score = eval_net(net, val_loader, device)
-                    scheduler.step(val_score)
+                    if len(val_loader) != 0:
+                        val_score = eval_net(net, val_loader, device)
+                        scheduler.step(val_score)
+                    else:
+                        val_score = -1
                     writer.add_scalar('learning_rate', optimizer.param_groups[0]['lr'], global_step)
 
                     if net.n_classes > 1:

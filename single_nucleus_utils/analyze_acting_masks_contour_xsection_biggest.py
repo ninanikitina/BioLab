@@ -12,13 +12,13 @@ from multiple_nuclei_utils.cut_nuclei import get_cnt_center
 from single_nucleus_utils.find_actin_fiber import ActinFiber
 
 
-MIN_FIBER_LENGTH_FINAL = 40 #5, 20, 40
-GAP = 15 #5, 15, 100 px
+MIN_FIBER_LENGTH_FINAL = 20 #5, 20, 40
+GAP = 5 #5, 15, 100 px
 
 input_folder = r"D:\BioLab\img\Actin__training_img_and_masks\Unet_results\Unet_prediction_V1-with_weight_correction_475"
-#input_folder = r"D:\BioLab\img\Actin__training_img_and_masks\Unet_results\Unet_prediction_V1-with_weight_correction_10_200"
-
-output_folder = r"C:\Users\nnina\Desktop\test"  # r"D:\BioLab\Tests_for_hand_labling\Final_masks"
+#input_folder = r"D:\BioLab\img\Actin__training_img_and_masks\Unet_results\Unet_prediction_V2-with_weight_correction_20_e200"
+#input_folder = r"D:\BioLab\img\Buer_big_nucleous_training_img_and_mask\layers_unet_mask_padding"
+output_folder = r"C:\Users\nnina\Desktop\test2"  # r"D:\BioLab\Tests_for_hand_labling\Final_masks"
 
 
 class NewLayerContours(object):
@@ -159,7 +159,7 @@ if __name__ == "__main__":
     img_3d = get_3d_img()
     actin_fibers = get_actin_fibers(img_3d)
 
-    with open("actin_data_long.obj", "wb") as file_to_save:
+    with open("actin_data_long2.obj", "wb") as file_to_save:   # change back to "actin-data_long.obj"
         pickle.dump(actin_fibers, file_to_save)
 
     actin_fibers = [actin for actin in actin_fibers if actin.n > MIN_FIBER_LENGTH_FINAL]

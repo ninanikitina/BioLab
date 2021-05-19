@@ -4,8 +4,9 @@ from tqdm import tqdm
 import cv2.cv2 as cv2
 import numpy as np
 
-input_folder = r"D:\BioLab\src\single_nucleus_utils\temp\nucleus_layers"
-output_folder = r"D:\BioLab\img\Big_nucleus_training_img_and_mask\510_layers_img_padding"
+input_folder = r"D:\BioLab\src\single_nucleus_utils\temp\actin_layers"
+#output_folder = r"D:\BioLab\img\Big_nucleus_training_img_and_mask\510_layers_img_padding"
+output_folder = r"D:\BioLab\img\Buer_big_nucleous_training_img_and_mask\layers_img_padding"
 
 if __name__ == "__main__":
     for img_path in glob.glob(input_folder + r"\*"):
@@ -13,7 +14,7 @@ if __name__ == "__main__":
 
         img = cv2.imread(img_path, 0)
         #img = np.flip(img, axis=0)
-        desired_size = 1360
+        desired_size = 1000
 
         old_size = img.shape[:2]  # old_size is in (height, width) format
 
