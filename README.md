@@ -7,11 +7,12 @@
 This project solves the problem of detecting stress fibers (parallel actin filaments) located above and below nuclei within a single cell using a confocal microscope image of this cell.
 ![alt text](https://github.com/ninanikitina/BioLab/blob/master/readme_pic/research_project.png?raw=true)
 
-There is two part of the project:
-1) Test part - detection volume of all nuclei in the picture with multiple nuclei. UNet model is used to detect countors of each nucleus on a picture, and the Alexnet model was used to detect real vs. reflected nucleus images on each layer. The result was compared with the result produced by 
-2) Main part
-
-UNet model was trained from scratch with 300 images of 30 nuclei on different slices with data augmentation.
+There are two parts of the project:
+1) Test part - detection volume of all nuclei in the picture with multiple nuclei. UNet model is used to detect countors of each nucleus on a picture, and the Alexnet model was used to detect real vs. reflected nucleus images on each layer.
+UNet model was trained from scratch with 300 images of 30 nuclei on different slices (no data augmentation).
+The result was compared with the result produced by the Imaris program. Test part overview and results: https://github.com/ninanikitina/BioLab/blob/master/readme_pic/Presentarion_12.18.2020.pdf
+2) Main part - detecting stress fibers. Slices of the 3D image of a single nucleus are converted from XY axis to ZY axis, and a UNet model is used to detect countors of each fiber on each slice.  
+The UNet model was trained from scratch with 40 images of different ZY slices of one nucleus (no data augmentation image).
 
 
 
@@ -23,27 +24,25 @@ We used Pytorch-UNet cloned from https://github.com/milesial/Pytorch-UNet by @mi
 
 # USAGE
 
-# Utils
-- alternative_augumentation
-	Augmentation based on the idea of catting nuclei from an image and then rotating the nuclei to a random angle
-	The process of code wring for this augmentation is in progress.
-- augumentaion_img
-	Augmentation based on 
-		- rotating an image to a random angle and then cutting out the central part
-		- translating image by a random shifting of a window that equals to final rotated image size
+## Drivers
+- predict_nuclei_volumes - run prediction of nuclei volume on the image with multiple nucleus (Test part)
+
+## Multiple Nuclei Utils - Test part
 - czi_reader 
-	Reads czi files and save jpg images form two different channels separately
-	NOTE: initial jpgs are 16 bits, and this script converts it to 8 bits by using hardcoded normalization.
-	The user should decide based on images preview how he would like to normalize an image
+   Reads czi files and save jpg images from two different channels separately
+   NOTE: initial jpg is 16 bits, and this script converts it to 8 bits by using hardcoded normalization.
+   The user should decide based on images preview how he would like to normalize an image.
 - cut_nuclei
-	Cuts a big image into a bunch of out 512"512 (hard codded size) images form with nuclei in the center and
-	creates a mask based on contours
+   Cuts a big image into a bunch of out 512"512 (hard codded size) images form with nuclei in the center and
+   creates a mask based on contours
+- layers_to_3D
+    Creates tif image of 3D visualization of detected nuclei
+- reconstruct_layers
+    Combine small mask images 512"512 into a big image
 - test_normalization
-
-- data_aug
-	Pytorch augmentation that shown unsatisfactory results for this project.
-	It will probably be used later.
-
+    Test program to compare normalization for different thresholds
+- volume_estimation
+    Calculates the volume of all nuclei based on big reconstructed images (reconstruct_layers)
 
 ## UNet
 
