@@ -4,11 +4,11 @@
 
 # DESCRIPTION
 
-This project is solving the problem of detection stress fibers (parallel actin filaments) located above and
-below nuclei within a single cell using confocal microscop image of this cell.
-There are two part of the project:
-1) Test part - detection nucleous volume in the picture with multiple nucleous. UNet and Alexnet models were used
-to detect real (not reflected) ncleous image on each layer. The result were compared with result produced by 
+This project solves the problem of detecting stress fibers (parallel actin filaments) located above and below nuclei within a single cell using a confocal microscope image of this cell.
+![alt text](https://github.com/ninanikitina/BioLab/blob/master/readme_pic/research_project.png?raw=true)
+
+There is two part of the project:
+1) Test part - detection volume of all nuclei in the picture with multiple nuclei. UNet model is used to detect countors of each nucleus on a picture, and the Alexnet model was used to detect real vs. reflected nucleus images on each layer. The result was compared with the result produced by 
 2) Main part
 
 UNet model was trained from scratch with 300 images of 30 nuclei on different slices with data augmentation.
