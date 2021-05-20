@@ -105,10 +105,10 @@ def get_3d_image(input_folder, output_folder, type, biggest_layer, biggest_nucle
             cv2.imwrite(actin_cap_path, object_layer)
 
     object_layers = sorted(object_layers, key=lambda x: x[1], reverse=True)
-    actin_3d_image = np.asarray([img for img, layer in object_layers], dtype=np.uint8)
+    image_3d = np.asarray([img for img, layer in object_layers], dtype=np.uint8)
 
-    actin_3d_image = np.moveaxis(actin_3d_image, 0, -1)
-    return actin_3d_image
+    image_3d = np.moveaxis(image_3d, 0, -1)
+    return image_3d
 
 
 def get_all_actin_coords(xsection, x):
@@ -125,14 +125,14 @@ def get_all_actin_coords(xsection, x):
 
 
 def get_actin_xsections(actin_3d_img, output_folder):
-    #x_start, x_end, step = 1850, 2360, 1
-    x_start, x_end, step = 370, 770, 1
+    x_start, x_end, step = 1850, 2360, 1
+    #x_start, x_end, step = 370, 770, 1
 
     actin_fibers = []
     actin_coords = []
     for x_slice in range(x_start, x_end, step):
-        #xsection = actin_3d_img[680: 1020, x_slice, :]
-        xsection = actin_3d_img[400: 650, x_slice, :]
+        xsection = actin_3d_img[680: 1020, x_slice, :]
+        #xsection = actin_3d_img[400: 650, x_slice, :]
 
         # xsection = cv2.resize(xsection, (340*1, 25*4), interpolation=cv2.INTER_CUBIC)
         current_layer_coords = get_all_actin_coords(xsection, x_slice)

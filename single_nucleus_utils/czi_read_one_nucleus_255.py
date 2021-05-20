@@ -33,6 +33,14 @@ def run_czi_reader_for_actin(img_name, image_arrays, czi_img_channel):
                                                                    image_arrays.shape[5],
                                                                    image_arrays.shape[6]))
 
+def run_czi_reader_255(CONFOCAL_IMG, NUCLEI_CHANNEL, ACTIN_CHANNEL):
+    img_name = os.path.splitext(os.path.basename(CONFOCAL_IMG))[0]
+    with CziFile(CONFOCAL_IMG) as czi:
+        image_arrays = czi.asarray()
+
+    run_czi_reader_for_nucleus(img_name, image_arrays, NUCLEI_CHANNEL)
+    run_czi_reader_for_actin(img_name, image_arrays, ACTIN_CHANNEL)
+    return image_arrays.shape[5], image_arrays.shape[6], image_arrays.shape[4]
 
 if __name__ == '__main__':
     img_path = r"D:\BioLab\img\Buer_img\Test1-L8-0.12.czi"

@@ -35,6 +35,7 @@ def get_nucleus_xsections(nucleus_3d_image, output_folder):
 if __name__ == "__main__":
     input_folder = 'temp/czi_layers'
     output_folder = 'temp/nucleus_layers'
+    rescale_z_coefficient = 4
 
     nucleus_3d_img = get_3d_image(input_folder, 'nucleus')
     get_nucleus_xsections(nucleus_3d_img, output_folder)

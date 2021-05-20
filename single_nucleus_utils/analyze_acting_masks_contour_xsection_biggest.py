@@ -11,7 +11,6 @@ import pickle
 from multiple_nuclei_utils.cut_nuclei import get_cnt_center
 from single_nucleus_utils.find_actin_fiber import ActinFiber
 
-
 MIN_FIBER_LENGTH_FINAL = 20 #5, 20, 40
 GAP = 5 #5, 15, 100 px
 
