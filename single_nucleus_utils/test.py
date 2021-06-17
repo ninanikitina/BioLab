@@ -9,16 +9,60 @@ import csv
 import pickle
 
 from multiple_nuclei_utils.cut_nuclei import get_cnt_center
-from single_nucleus_utils.find_actin_fiber import ActinFiber
+
 
 MIN_FIBER_LENGTH_FINAL = 20 #5, 20, 40
 GAP = 5 #5, 15, 100 px
 
-input_folder = r"D:\BioLab\img\Actin__training_img_and_masks\Unet_results\Unet_prediction_V1-with_weight_correction_475"
+#input_folder = r"D:\BioLab\img\Actin__training_img_and_masks\Unet_results\Unet_prediction_V1-with_weight_correction_475"
 #input_folder = r"D:\BioLab\img\Actin__training_img_and_masks\Unet_results\Unet_prediction_V2-with_weight_correction_20_e200"
 #input_folder = r"D:\BioLab\img\Buer_big_nucleous_training_img_and_mask\layers_unet_mask_padding"
+input_folder = r"D:\BioLab\src\single_nucleus_utils\temp\actin_mask"
 output_folder = r"C:\Users\nnina\Desktop\test2"  # r"D:\BioLab\Tests_for_hand_labling\Final_masks"
 
+class ActinFiber(object):
+    scale_x = 0.04  # units - micrometer
+    scale_y = 0.04  # units - micrometer (image was resized to account for different scale along z axis)
+    scale_z = 0.04  # units - micrometer (image was resized to account for different scale along z axis)
+
+    def __init__(self, x, y, z, layer, cnt):
+        self.xs = [x]
+        self.ys = [y]
+        self.zs = [z]
+        self.cnts = [cnt]
+        self.last_layer = [layer]
+        self.n = 1
+        self.line = None
+        self.merged = False
+
+    def update(self, x, y, z, layer, cnt):
+        self.xs.append(x)
+        self.ys.append(y)
+        self.zs.append(z)
+        self.cnts.append(cnt)
+        self.last_layer.append(layer)
+        self.n += 1
+
+    def fit_line(self):
+        points = np.asarray([[x, y] for x, y in zip(self.xs, self.ys)])
+        self.line = cv2.fitLine(points, cv2.DIST_L2, 0, 0.01, 0.01)
+
+    def get_stat(self):
+        """
+        actin_length - full length of fiber including gaps
+        actin_xsection - sum of all xsections for each layer times scale
+        actin_volume - actin length times average xsection
+        """
+        actin_length = (self.xs[-1] - self.xs[0]) * self.scale_x
+        actin_xsection = np.mean([cv2.contourArea(cnt) for cnt in self.cnts]) * self.scale_y * self.scale_z
+        actin_volume = actin_length * actin_xsection
+
+        max_gap_in_layers = 0
+        for i in range(self.n - 1):
+            if self.xs[i + 1] - self.xs[i] > max_gap_in_layers:
+                max_gap_in_layers = self.xs[i + 1] - self.xs[i] - 1
+
+        return [actin_length, actin_xsection, actin_volume, self.n, max_gap_in_layers]
 
 class NewLayerContours(object):
     def __init__(self, x, y, z, cnt):
