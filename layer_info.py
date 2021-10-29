@@ -38,7 +38,7 @@ actin_fibers = [actin for actin in actin_fibers if actin.n > MIN_FIBER_LENGTH]
 
 #getting center coordinates from
 # center_x, center_y, center_z = get_nucleus_origin(nucleus_3d_img)
-center_x, center_y, center_z = 249, 252, 271
+center_x, center_y, center_z = 249, 256, 271
 
 areas = []
 new_cnts = []
@@ -48,17 +48,12 @@ for actin in actin_fibers:
         idx = actin.xs.index(center_x)
         y_cnt.append(actin.ys[idx])
         z_cnt.append(actin.zs[idx])
-        if cv2.contourArea(actin.cnts[idx]) < -1:
-            mask = draw_cnts((500, 500), [actin.cnts[idx]])
-            #areas.append(np.count_nonzero(mask)* SCALE_Y * SCALE_Z)
-            areas.append(np.count_nonzero(mask))
-        else:
-            #areas.append(cv2.contourArea(actin.cnts[idx]) * SCALE_Y * SCALE_Z)
-            areas.append(cv2.contourArea(actin.cnts[idx]) + cv2.arcLength (actin.cnts[idx], True)/2)
+        mask = draw_cnts((512, 512), [actin.cnts[idx]])
+        areas.append(np.count_nonzero(mask) * SCALE_Y * SCALE_Z)
         new_cnts.append(actin.cnts[idx])
 
 data = []
-data.extend([[y - center_y, center_z - z, s] for y, z, s in zip(y_cnt, z_cnt, areas)])
+data.extend([[(y - center_y) * SCALE_X, (center_z - z) * SCALE_Z, s] for y, z, s in zip(y_cnt, z_cnt, areas) if (center_z - z) > 2])
 
 np.savetxt("middle_layera_actin_points_coordinates.csv", np.array(data, dtype=np.double), delimiter=",", fmt="%10.2f")
 for i, _ in enumerate(z_cnt):

@@ -42,9 +42,15 @@ def get_cnts(img, threshold):
     img_thresh = cv2.morphologyEx(img_thresh, cv2.MORPH_OPEN, np.ones((5, 5)))
     img_thresh = cv2.morphologyEx(img_thresh, cv2.MORPH_CLOSE, np.ones((5, 5)))
 
-    cnts, _ = cv2.findContours(img_thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+    cnts = cv2.findContours(img_thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)[0]
     if len(cnts) == 0:
         return None
+
+    hulls = [cv2.convexHull(cnt, False) for cnt in cnts]
+    mask = np.zeros_like(img_thresh)
+    cv2.drawContours(mask, hulls, -1, 255, -1)
+    cnts = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)[0]
+
     return cnts
 
 
@@ -96,3 +102,36 @@ def make_padding(img, final_img_size):
 
     padded_img = cv2.copyMakeBorder(img, top, bottom, left, right, cv2.BORDER_CONSTANT, value=0)
     return padded_img
+
+
+def resize_mask(img, scale, axis):
+    if axis == "width":
+        dsize = (int(img.shape[1] * (scale[2] / scale[0])), img.shape[0])  # img.shape = (width, height)
+        img = cv2.resize(img, dsize, interpolation=cv2.INTER_NEAREST)
+        crop_img = img[:, img.shape[1]//2 - 512 // 2:  img.shape[1]//2 + 512 // 2]
+    if axis == "height":
+        dsize = (int(img.shape[1] , img.shape[0] * (scale[2] / scale[0])))  # img.shape = (width, height)
+        img = cv2.resize(img, dsize, interpolation=cv2.INTER_NEAREST)
+        crop_img = img[img.shape[0] // 2 - 512 // 2:  img.shape[0] // 2 + 512 // 2 , :]
+    return crop_img
+
+
+def rotate_bound(image, angle):
+    # grab the dimensions of the image and then determine the
+    # center
+    (h, w) = image.shape[:2]
+    (cX, cY) = (w // 2, h // 2)
+    # grab the rotation matrix (applying the negative of the
+    # angle to rotate clockwise), then grab the sine and cosine
+    # (i.e., the rotation components of the matrix)
+    M = cv2.getRotationMatrix2D((cX, cY), -angle, 1.0)
+    cos = np.abs(M[0, 0])
+    sin = np.abs(M[0, 1])
+    # compute the new bounding dimensions of the image
+    nW = int((h * sin) + (w * cos))
+    nH = int((h * cos) + (w * sin))
+    # adjust the rotation matrix to take into account translation
+    M[0, 2] += (nW / 2) - cX
+    M[1, 2] += (nH / 2) - cY
+    # perform the actual rotation and return the image
+    return cv2.warpAffine(image, M, (nW, nH))

@@ -6,6 +6,7 @@ import numpy as np
 from tqdm import tqdm
 
 from czifile import CziFile
+from readlif.reader import LifFile
 
 
 class ActinContour(object):
@@ -45,14 +46,17 @@ class ActinFiber(object):
         points = np.asarray([[x, y] for x, y in zip(self.xs, self.ys)])
         self.line = cv2.fitLine(points, cv2.DIST_L2, 0, 0.01, 0.01)
 
-    def get_stat(self, scale_x, scale_y, scale_z):
+    def get_stat(self, scale_x, scale_y, scale_z, is_rescaled):
         """
         actin_length - full length of fiber including gaps
         actin_xsection - sum of all xsections for each layer times scale
         actin_volume - actin length times average xsection
         """
         actin_length = (self.xs[-1] - self.xs[0]) * scale_x
-        actin_xsection = np.mean([cv2.contourArea(cnt) for cnt in self.cnts]) * scale_y * scale_z
+        if is_rescaled:
+            actin_xsection = np.mean([cv2.contourArea(cnt) for cnt in self.cnts]) * scale_y ** 2
+        else:
+            actin_xsection = np.mean([cv2.contourArea(cnt) for cnt in self.cnts]) * scale_y * scale_z
         actin_volume = actin_length * actin_xsection
 
         max_gap_in_layers = 0
@@ -89,6 +93,14 @@ class ConfocalImgReader(object):
             self.image_arrays = czi.asarray()
         self.type = self.image_arrays[0, 0, 0, 0, :, :, 0].dtype
 
+    def _read_as_lif(self):
+        lif = LifFile(self.img_path)
+        nucleus_array = np.asarray([np.array(pil_image) * 16 for pil_image in lif.get_image(0).get_iter_z(t=0, c=0)]) #lif.get_image(0) - image num
+        actin_array = np.asarray([np.array(pil_image) * 16 for pil_image in lif.get_image(0).get_iter_z(t=0, c=1)])
+        self.image_arrays = np.stack([nucleus_array, actin_array], axis=3)
+        self.image_arrays = np.moveaxis(self.image_arrays, 0, 2)
+        self.type = self.image_arrays.dtype
+
     def _normalization(self, img, norm_th, pixel_value):
         """
         normalized specified image based on normalization threshold
@@ -111,8 +123,8 @@ class ConfocalImgReader(object):
         return img_path_norm
 
     def _get_norm_th(self, pixel_value):
-        middle_layer = self.image_arrays.shape[4] // 2
-        img = self.image_arrays[0, 0, self.nuclei_channel, 0, middle_layer, :, :, 0]
+        middle_layer = self.image_arrays.shape[2] // 2  #TODO this channel is different for different image formats
+        img = self.image_arrays[:, :, middle_layer, self.actin_channel]
         hist = np.squeeze(cv2.calcHist([img], [0], None, [pixel_value], [0, pixel_value]))
         norm_th, sum = 1, 0
         while (sum / img.size < self.noise_tr):
@@ -121,16 +133,22 @@ class ConfocalImgReader(object):
 
         return norm_th
 
-    def _save_normalized_img(self, nucleus_or_actin, norm_th, pixel_value, output_folder):
-        for i in tqdm(range(self.image_arrays.shape[4])):
-            img_path_norm = self._get_img_path(self.img_name + "_" + nucleus_or_actin, i, output_folder)
-            channel = self.actin_channel if nucleus_or_actin == "actin" else self.nuclei_channel
-            norm_image = self._normalization(self.image_arrays[0, 0, channel, 0, i, :, :, 0], norm_th, pixel_value)
+    def _save_normalized_img(self, bio_structure, norm_th, pixel_value, output_folder):
+        for i in tqdm(range(self.image_arrays.shape[2])):
+            img_path_norm = self._get_img_path(self.img_name + "_" + bio_structure, i, output_folder)
+            channel = self.actin_channel if bio_structure == "actin" else self.nuclei_channel
+            norm_image = self._normalization(self.image_arrays[:, :, i, channel], norm_th, pixel_value)
             cv2.imwrite(img_path_norm, norm_image)
-        print("\n{} image has {} layers of shape (h={}, w={})\n".format(nucleus_or_actin,
-                                                                   self.image_arrays.shape[4],
-                                                                   self.image_arrays.shape[5],
-                                                                   self.image_arrays.shape[6]))
+        # print("\n{} image has {} layers of shape (h={}, w={})\n".format(bio_structure,
+        #                                                                 self.image_arrays.shape[4],
+        #                                                                 self.image_arrays.shape[5],
+        #                                                                 self.image_arrays.shape[6]))
+
+    def _save_img(self, bio_structure, output_folder):
+        for i in tqdm(range(self.image_arrays.shape[2])):
+            img_path = self._get_img_path(self.img_name + "_" + bio_structure, i, output_folder)
+            channel = self.actin_channel if bio_structure == "actin" else self.nuclei_channel
+            cv2.imwrite(img_path, np.uint8(self.image_arrays[:, :, i, channel] / 256))  # convert to 8-bit image
 
     def read(self, output_folder):
         """
@@ -139,15 +157,24 @@ class ConfocalImgReader(object):
             Parameters:
             output_folder (string): path to the folder to save jpg images
         """
-        if self.ext == ".czi":
+        if self.ext == ".lif":
+            self._read_as_lif()
+            self._save_img("actin", output_folder)
+            self._save_img("nucleus", output_folder)
+            # pixel_value = 65536 if self.type == "uint16" else 256
+            # norm_th = self._get_norm_th(pixel_value)
+            # self._save_normalized_img("actin", norm_th, pixel_value, output_folder)
+            # self._save_normalized_img("nucleus", norm_th, pixel_value, output_folder)
+
+        elif self.ext == ".czi":
             self._read_as_czi()
+            pixel_value = 65536 if self.type == "uint16" else 256
+            norm_th = self._get_norm_th(pixel_value)
+            self._save_normalized_img("actin", norm_th, pixel_value, output_folder)
+            self._save_normalized_img("nucleus", norm_th, pixel_value, output_folder)
         else:
-            print("Can not read non czi files!")
+            print("File is not in czi or lif format!")
             sys.exit()
-        pixel_value = 65536 if self.type == "uint16" else 256
-        norm_th = self._get_norm_th(pixel_value)
-        self._save_normalized_img("actin", norm_th, pixel_value, output_folder)
-        self._save_normalized_img("nucleus", norm_th, pixel_value, output_folder)
 
 
 class CntExtremes(object):

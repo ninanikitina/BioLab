@@ -104,18 +104,18 @@ def plot_actin_fibers(actin_fibers):
     plt.show()
 
 
-def get_actin_stat(actin_fibers, scale_x, scale_y, scale_z):
+def get_actin_stat(actin_fibers, scale_x, scale_y, scale_z, is_rescaled):
     header_row = ["ID", "Actin Length", "Actin Xsection", "Actin Volume", "Number of fiber layers", "Max gap", "Left node ID", "Right node ID"]
     with open('actin_stat.csv', mode='w') as stat_file:
         csv_writer = csv.writer(stat_file, delimiter=',')
-
         csv_writer.writerow(header_row)
 
         for fiber_id, fiber in enumerate(actin_fibers):
-            csv_writer.writerow([str(fiber_id)] + fiber.get_stat(scale_x, scale_y, scale_z) + [fiber.left_node_id, fiber.right_node_id])
+            csv_writer.writerow([str(fiber_id)] + fiber.get_stat(scale_x, scale_y, scale_z, is_rescaled))
+            # csv_writer.writerow([str(fiber_id)] + fiber.get_stat(scale_x, scale_y, scale_z, is_rescaled) + [fiber.left_node_id, fiber.right_node_id])
+    print("Stat created");
 
-
-def get_node_stat(nodes, pairs, scale_y, scale_z):
+def get_node_stat(nodes, pairs, scale_y, scale_z, is_rescaled):
     header_row = ["ID", "x", "y", "z", "actin_ids", "node_xsection", "connected_node_id"]
     with open('node_stat.csv', mode='w') as stat_file:
         csv_writer = csv.writer(stat_file, delimiter=',')
@@ -136,7 +136,10 @@ def get_node_stat(nodes, pairs, scale_y, scale_z):
             csv_writer.writerow([str(node_id)] + node.get_stat(scale_y, scale_z) + [connected_node_id])
 
 
-def run_node_creation(scale_x, scale_y, scale_z, object):
+def run_node_creation(scale_x, scale_y, scale_z, object, is_rescaled, new_actin_len_th):
+    """
+    new_actin_len_th - do not breake actin if one of the part is too small
+    """
     file_to_read = open(object, "rb")
     actin_fibers = pickle.load(file_to_read)
     actin_fibers = [actin for actin in actin_fibers if actin.n > MIN_FIBER_LENGTH_FINAL]
@@ -167,6 +170,10 @@ def run_node_creation(scale_x, scale_y, scale_z, object):
         if actin_id_to_break is not None:
             actin_to_break = actin_fibers[actin_id_to_break]
             break_index = actin_to_break.xs.index(left_node.x - 1)
+
+            # do not break actin if one of the parts is too small
+            if break_index < new_actin_len_th or len(actin_to_break.xs) - new_actin_len_th < break_index:
+                continue
 
             new_right_actin = ActinFiber(-1, -1, -1, -1, -1)
             new_right_actin.xs = actin_to_break.xs[break_index + 1:]
@@ -219,6 +226,10 @@ def run_node_creation(scale_x, scale_y, scale_z, object):
         if actin_id_to_break is not None:
             actin_to_break = actin_fibers[actin_id_to_break]
             break_index = actin_to_break.xs.index(right_node.x + 1)
+
+            # do not break actin if one of the parts is too small
+            if break_index < new_actin_len_th or len(actin_to_break.xs) - new_actin_len_th < break_index:
+                continue
 
             new_right_actin = ActinFiber(-1, -1, -1, -1, -1)
             new_right_actin.xs = actin_to_break.xs[break_index + 1:]
@@ -301,8 +312,8 @@ def run_node_creation(scale_x, scale_y, scale_z, object):
 
     # actin_fibers = [actin for actin in actin_fibers if actin.n > 5]
     plot_nodes(actin_fibers, nodes, pairs)
-    get_actin_stat(actin_fibers, scale_x, scale_y, scale_z)
-    get_node_stat(nodes, pairs, scale_y, scale_z)
+    get_actin_stat(actin_fibers, scale_x, scale_y, scale_z, is_rescaled)
+    get_node_stat(nodes, pairs, scale_y, scale_z, is_rescaled)
     # plot_actin_fibers(actin_fibers)
 
 

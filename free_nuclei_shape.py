@@ -1,8 +1,10 @@
 import math
+import trimesh
 
 import numpy as np
+from skimage import measure
 from copy import deepcopy
-from stl import mesh
+# from stl import mesh
 import matplotlib.tri as mtri
 
 from analyze_stress_fibers import nucleus_reco_3d
@@ -32,6 +34,9 @@ def find_ellipsoid_semiaxis(scale_x, scale_y, scale_z, volume, ba_ratio, ca_rati
     axis_a = int(a / scale_x)
     axis_b = int(b / scale_y)
     axis_c = int(c / scale_z)
+    print(f"a = {a} micrometers")
+    print(f"b = {b} micrometers")
+    print(f"c = {c} micrometers")
     return axis_a, axis_b, axis_c
 
 
@@ -57,21 +62,17 @@ def draw_ideal_nucleus(axis_a, axis_b, axis_c):
 def run_ideal_nucleus_creation(scale_x, scale_y, scale_z, volume, ba_ratio, ca_ratio):
     axis_a, axis_b, axis_c = find_ellipsoid_semiaxis(scale_x, scale_y, scale_z, volume, ba_ratio, ca_ratio)
     ideal_nucleus_3d = draw_ideal_nucleus(axis_a, axis_b, axis_c)
-    print(ideal_nucleus_3d.shape)
-    print(ideal_nucleus_3d.dtype)
-    x_all = np.hstack(ideal_nucleus_3d[0])
-    y_all = np.hstack(ideal_nucleus_3d[1])
-    z_all = np.hstack(ideal_nucleus_3d[2])
-    tris = mtri.Triangulation(x_all, y_all)
-    #print(z_all)
-    #nucleus_mesh = mesh.Mesh(ideal_nucleus_3d, remove_empty_areas=False)
-    #nucleus_reco_3d(ideal_nucleus_3d)
+    verts, faces, normals, values = measure.marching_cubes(ideal_nucleus_3d, 0, step_size=1)
+    surf_mesh = trimesh.Trimesh(verts, faces, validate=True)
+    surf_mesh.export('mesh_free_nuclei.stl')
+    nucleus_reco_3d(ideal_nucleus_3d)
+    print(f"The axis aligned box size of the free nuclei: {surf_mesh.extents}")
 
 
 if __name__ == "__main__":
     scale_x, scale_y, scale_z = 0.04, 0.04, 0.17
-    volume =739.9415920000002
-    ba_ratio = 2
-    ca_ratio = 3
+    volume =773.9556000000006
+    ba_ratio = 1/1#According presentation "1_20 Meeting" ratio A/B is 0.88692
+    ca_ratio = 1/1   #According presentation "1_20 Meeting" ratio A/C is 1.204339
     run_ideal_nucleus_creation(scale_x, scale_y, scale_z, volume, ba_ratio, ca_ratio)
 
